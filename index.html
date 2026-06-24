@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>Hybrid AI Search</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior-y: none; background: #0f172a; color: white; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .search-glow:focus { box-shadow: 0 0 30px rgba(99,102,241,0.3); }
+        .result-card { animation: slideUp 0.4s ease-out forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        .typing-dot { animation: typing 1.4s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+        .ai-answer { position: relative; padding-left: 16px; }
+        .ai-answer::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #6366f1, #a855f7); border-radius: 3px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+    <div class="max-w-2xl mx-auto px-4 pt-6 pb-24 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="relative w-10 h-10 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-indigo-500 rounded-xl opacity-20 animate-pulse"></div>
+                    <div class="relative w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-search text-white text-lg"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Hybrid AI Search</h1>
+                    <p class="text-xs text-slate-400">AI-powered search</p>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="w-10 h-10 rounded-xl glass flex items-center justify-center">
+                <i class="fas fa-cog text-slate-300"></i>
+            </button>
+        </header>
+
+        <!-- API Key Input (First Time Only) -->
+        <div id="api-key-section" class="mb-4 hidden">
+            <div class="glass rounded-2xl p-4 mb-3">
+                <p class="text-sm text-slate-300 mb-2"><i class="fas fa-key text-indigo-400 mr-2"></i>Enter your Groq API Key</p>
+                <input type="password" id="api-key-input" placeholder="gsk_..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                <button onclick="saveApiKey()" class="w-full mt-2 bg-indigo-600 text-white py-2 rounded-xl text-sm font-medium">Save Key</button>
+                <p class="text-xs text-slate-500 mt-2">Your key is stored locally on your device only.</p>
+            </div>
+        </div>
+
+        <!-- Search Box -->
+        <div class="relative mb-4">
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Ask anything..." class="w-full bg-slate-800/80 border border-slate-700 rounded-2xl pl-12 pr-14 py-4 text-white placeholder-slate-500 search-glow focus:outline-none focus:border-indigo-500 transition-all text-base">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <button onclick="clearSearch()" id="clear-btn" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </div>
+            <div class="flex gap-2 mt-3 overflow-x-auto pb-2">
+                <button onclick="quickSearch('What is AI?')" class="whitespace-nowrap px-4 py-2 rounded-full glass text-xs text-slate-300">AI Explained</button>
+                <button onclick="quickSearch('Latest tech news')" class="whitespace-nowrap px-4 py-2 rounded-full glass text-xs text-slate-300">Tech News</button>
+                <button onclick="quickSearch('Python tips')" class="whitespace-nowrap px-4 py-2 rounded-full glass text-xs text-slate-300">Python</button>
+            </div>
+        </div>
+
+        <button onclick="performSearch()" id="search-btn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all mb-6 flex items-center justify-center gap-2">
+            <i class="fas fa-wand-magic-sparkles"></i>
+            <span>Search with AI</span>
+        </button>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden flex-col items-center justify-center py-12">
+            <div class="flex gap-2 mb-4">
+                <div class="w-3 h-3 bg-indigo-500 rounded-full typing-dot"></div>
+                <div class="w-3 h-3 bg-purple-500 rounded-full typing-dot"></div>
+                <div class="w-3 h-3 bg-pink-500 rounded-full typing-dot"></div>
+            </div>
+            <p class="text-slate-400 text-sm" id="loading-text">Searching...</p>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="flex-1 space-y-4"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-center py-12 opacity-50">
+            <div class="w-24 h-24 rounded-full glass flex items-center justify-center mb-4">
+                <i class="fas fa-compass text-4xl text-slate-600"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-400">Start Exploring</h3>
+            <p class="text-sm text-slate-500 max-w-xs">Search with AI-powered understanding</p>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 px-6 py-3">
+        <div class="max-w-2xl mx-auto flex justify-around">
+            <button class="flex flex-col items-center gap-1 text-indigo-400">
+                <i class="fas fa-search text-lg"></i>
+                <span class="text-[10px]">Search</span>
+            </button>
+            <button onclick="showHistory()" class="flex flex-col items-center gap-1 text-slate-500">
+                <i class="fas fa-clock-rotate-left text-lg"></i>
+                <span class="text-[10px]">History</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="toggleSettings()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-slate-800 rounded-t-3xl p-6 max-w-2xl mx-auto">
+            <div class="w-12 h-1 bg-slate-600 rounded-full mx-auto mb-6"></div>
+            <h2 class="text-xl font-bold mb-4">Settings</h2>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 rounded-xl glass">
+                    <div>
+                        <p class="font-medium">AI Summarization</p>
+                        <p class="text-xs text-slate-400">Get AI-generated answers</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="ai-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
+                <button onclick="clearHistory()" class="w-full p-4 rounded-xl glass text-red-400 font-medium flex items-center justify-center gap-2">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
