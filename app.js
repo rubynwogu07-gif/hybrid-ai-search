@@ -410,3 +410,151 @@ function startVoiceSearch() {
 
 // Initialize voice search on load
 initVoiceSearch();
+// Image Search functionality
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    showToast('Analyzing image...');
+    startLoading();
+    
+    try {
+        // Convert image to base64
+        const base64Image = await fileToBase64(file);
+        
+        // Use Groq Vision API to describe the image
+        const description = await analyzeImageWithAI(base64Image);
+        
+        if (description) {
+            searchInput.value = description;
+            clearBtn.classList.remove('hidden');
+            performSearch();
+        } else {
+            showError('Could not analyze image. Try again.');
+        }
+    } catch (error) {
+        console.error('Image analysis error:', error);
+        showError('Image analysis failed. Please try again.');
+    } finally {
+        stopLoading();
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function analyzeImageWithAI(base64Image) {
+    if (!GROQ_API_KEY) {
+        showToast('Please add your Groq API key first');
+        return null;
+    }
+    
+    try {
+        const response = await fetch(CONFIG.GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.2-11b-vision-preview',
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: 'Describe this image in detail. What do you see?' },
+                            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+                        ]
+                    }
+                ],
+                max_tokens: 300
+            })
+        });
+        
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (e) {
+        console.error('Vision API error:', e);
+        return null;
+    }
+}
+// Image Search functionality
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    showToast('Analyzing image...');
+    startLoading();
+    
+    try {
+        // Convert image to base64
+        const base64Image = await fileToBase64(file);
+        
+        // Use Groq Vision API to describe the image
+        const description = await analyzeImageWithAI(base64Image);
+        
+        if (description) {
+            searchInput.value = description;
+            clearBtn.classList.remove('hidden');
+            performSearch();
+        } else {
+            showError('Could not analyze image. Try again.');
+        }
+    } catch (error) {
+        console.error('Image analysis error:', error);
+        showError('Image analysis failed. Please try again.');
+    } finally {
+        stopLoading();
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function analyzeImageWithAI(base64Image) {
+    if (!GROQ_API_KEY) {
+        showToast('Please add your Groq API key first');
+        return null;
+    }
+    
+    try {
+        const response = await fetch(CONFIG.GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.2-11b-vision-preview',
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: 'Describe this image in detail. What do you see?' },
+                            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+                        ]
+                    }
+                ],
+                max_tokens: 300
+            })
+        });
+        
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (e) {
+        console.error('Vision API error:', e);
+        return null;
+    }
+}
