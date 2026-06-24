@@ -58,13 +58,17 @@
         </div>
 
         <div class="relative mb-4">
-            <div class="relative">
-                <input type="text" id="search-input" placeholder="Ask anything..." class="w-full bg-slate-800/80 border border-slate-700 rounded-2xl pl-12 pr-14 py-4 text-white placeholder-slate-500 search-glow focus:outline-none focus:border-indigo-500 transition-all text-base">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <button onclick="clearSearch()" id="clear-btn" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-                    <i class="fas fa-times-circle"></i>
-                </button>
-            </div>
+    <div class="relative">
+        <input type="text" id="search-input" placeholder="Ask anything..." class="w-full bg-slate-800/80 border border-slate-700 rounded-2xl pl-12 pr-24 py-4 text-white placeholder-slate-500 search-glow focus:outline-none focus:border-indigo-500 transition-all text-base">
+        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+        <button onclick="startVoiceSearch()" id="mic-btn" class="absolute right-14 top-1/2 -translate-y-1/2 text-indigo-400 hover:text-indigo-300 transition-colors">
+            <i class="fas fa-microphone text-lg"></i>
+        </button>
+        <button onclick="clearSearch()" id="clear-btn" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+            <i class="fas fa-times-circle"></i>
+        </button>
+    </div>
+
             <div class="flex gap-2 mt-3 overflow-x-auto pb-2">
                 <button onclick="quickSearch('What is AI?')" class="whitespace-nowrap px-4 py-2 rounded-full glass text-xs text-slate-300">AI Explained</button>
                 <button onclick="quickSearch('Latest tech news')" class="whitespace-nowrap px-4 py-2 rounded-full glass text-xs text-slate-300">Tech News</button>
