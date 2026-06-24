@@ -3,9 +3,16 @@
 
 const CONFIG = {
     GROQ_API_URL: 'https://api.groq.com/openai/v1/chat/completions',
-    MODEL: 'llama3-8b-8192',
+    MODEL: localStorage.getItem('ai_model') || 'llama3-8b-8192',
     MAX_RESULTS: 8
 };
+
+const AI_MODELS = {
+    'llama3-8b-8192': 'Llama 3 8B (Fast)',
+    'llama-3.2-11b-vision-preview': 'Llama 3.2 Vision (Images)',
+    'mixtral-8x7b-32768': 'Mixtral 8x7B (Powerful)'
+};
+
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
@@ -154,6 +161,46 @@ async function searchDuckDuckGo(query) {
 
 // AI Summary with Groq
 async function generateAISummary(query, results) {
+    const model = localStorage.getItem('ai_model') || 'llama3-8b-8192';
+    const context = results.slice(0, 3).map((r, i) => 
+        `Source ${i+1}: ${r.title}\n${r.snippet}`
+    ).join('\n\n');
+    
+    const prompt = `Based on these search results, provide a concise, accurate answer to the query. Be brief (2-3 sentences max).
+
+Query: ${query}
+
+Results:
+${context}
+
+Answer:`;
+    
+    try {
+        const response = await fetch(CONFIG.GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [
+                    { role: 'system', content: 'You are a helpful search assistant. Provide concise, accurate answers.' },
+                    { role: 'user', content: prompt }
+                ],
+                max_tokens: 300,
+                temperature: 0.3
+            })
+        });
+        
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (e) {
+        console.error('AI error:', e);
+        return null;
+    }
+}
+
     const context = results.slice(0, 3).map((r, i) => 
         `Source ${i+1}: ${r.title}\n${r.snippet}`
     ).join('\n\n');
@@ -558,3 +605,22 @@ async function analyzeImageWithAI(base64Image) {
         return null;
     }
 }
+function changeModel() {
+    const select = document.getElementById('model-select');
+    localStorage.setItem('ai_model', select.value);
+    CONFIG.MODEL = select.value;
+    showToast('Model changed to ' + AI_MODELS[select.value]);
+}
+
+// Load saved model on startup
+function loadSavedModel() {
+    const saved = localStorage.getItem('ai_model');
+    if (saved) {
+        const select = document.getElementById('model-select');
+        if (select) select.value = saved;
+        CONFIG.MODEL = saved;
+    }
+}
+
+// Call this when page loads
+document.addEventListener('DOMContentLoaded', loadSavedModel);
