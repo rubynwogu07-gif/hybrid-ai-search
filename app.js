@@ -348,3 +348,65 @@ function toggleSettings() {
 
 console.log('Hybrid AI Search loaded');
 
+// Voice Search functionality
+let recognition = null;
+
+function initVoiceSearch() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            searchInput.placeholder = "Listening...";
+            document.getElementById('mic-btn').classList.add('text-red-400');
+            showToast('Listening... Speak now');
+        };
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            clearBtn.classList.remove('hidden');
+            performSearch();
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            searchInput.placeholder = "Ask anything...";
+            document.getElementById('mic-btn').classList.remove('text-red-400');
+            if (event.error === 'not-allowed') {
+                showToast('Microphone permission denied');
+            } else {
+                showToast('Voice search failed. Try again.');
+            }
+        };
+        
+        recognition.onend = function() {
+            searchInput.placeholder = "Ask anything...";
+            document.getElementById('mic-btn').classList.remove('text-red-400');
+        };
+    } else {
+        console.log('Speech recognition not supported');
+    }
+}
+
+function startVoiceSearch() {
+    if (!recognition) {
+        initVoiceSearch();
+    }
+    
+    if (recognition) {
+        try {
+            recognition.start();
+        } catch (e) {
+            showToast('Microphone not available');
+        }
+    } else {
+        showToast('Voice search not supported on this device');
+    }
+}
+
+// Initialize voice search on load
+initVoiceSearch();
