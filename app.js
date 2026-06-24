@@ -624,3 +624,27 @@ function loadSavedModel() {
 
 // Call this when page loads
 document.addEventListener('DOMContentLoaded', loadSavedModel);
+// Dark/Light Mode Toggle
+function toggleTheme() {
+    const isDark = document.getElementById('theme-toggle').checked;
+    if (isDark) {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Load saved theme
+function loadSavedTheme() {
+    const saved = localStorage.getItem('theme');
+    const toggle = document.getElementById('theme-toggle');
+    if (saved === 'light') {
+        document.body.classList.add('light-mode');
+        if (toggle) toggle.checked = false;
+    }
+}
+
+// Run when page loads
+setTimeout(loadSavedTheme, 500);
