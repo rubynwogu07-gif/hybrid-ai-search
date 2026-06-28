@@ -41,7 +41,9 @@ function saveApiKey() {
         showToast('Invalid key. Should start with gsk_');
     }
 }
-
+function toggleSettings() {
+    apiKeySection.classList.toggle('hidden');
+}
 // Event Listeners
 searchInput.addEventListener('input', (e) => {
     clearBtn.classList.toggle('hidden', !e.target.value);
